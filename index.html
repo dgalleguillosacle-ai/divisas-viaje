@@ -92,7 +92,7 @@
   .fld input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-size:20px;padding:9px 0;outline:none;font-variant-numeric:tabular-nums}
   .small{font-size:12px;color:var(--muted);margin-bottom:4px}
   .verdict{display:none;margin-top:10px;border-radius:12px;padding:9px 12px}
-  .selname{display:none;font-size:13px;color:var(--accent2);font-weight:600;margin:-2px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .selname{display:none;font-size:13px;color:var(--accent2);font-weight:600;margin:-2px 0 8px;line-height:1.3}
   .selname.show{display:block}
   .compcard{padding:12px 14px}
   .compcard .curpick{margin-bottom:8px}
@@ -104,7 +104,11 @@
   ul.items li.on{background:var(--sel);margin:0 -10px;padding-left:10px;padding-right:10px;border-radius:10px;border-top-color:transparent;box-shadow:inset 3px 0 0 var(--accent2)}
   ul.items li.on + li{border-top-color:transparent}
   ul.items li.on .n{font-weight:600;color:var(--accent2)}
+  ul.items li.on .ref{font-weight:400}
   ul.items .n{flex:1;min-width:0;cursor:pointer;font-size:15px}
+  .ref{font-size:11.5px;color:var(--muted);font-weight:400;margin-top:3px;line-height:1.3}
+  .rb{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:600;margin-right:2px}
+  .rb-good{background:var(--good-soft);color:var(--good)}.rb-mid{background:var(--mid-soft);color:var(--mid)}.rb-bad{background:var(--bad-soft);color:var(--bad)}
   ul.items .p{text-align:right;font-variant-numeric:tabular-nums;cursor:pointer;line-height:1.2}
   ul.items .p b{display:block;font-size:15px}
   ul.items .p small{color:var(--muted);font-size:12px}
@@ -160,13 +164,14 @@
       </div>
       <div class="card">
         <p class="lbl">Mis precios de Chile</p>
-        <div class="small">Precio en Chile y cuánto debería costar allá para que sea igual. Toca uno para compararlo.</div>
+        <div class="small">Precio en Chile, cuánto debería costar allá para que salga igual y el precio típico de supermercado en el país elegido. Toca uno para compararlo.</div>
         <ul class="items" id="items"></ul>
         <div class="add">
           <input id="newName" placeholder="Producto">
           <input id="newPrice" inputmode="numeric" placeholder="$ CLP">
           <button class="btn" id="addBtn">+</button>
         </div>
+        <p class="note">Precios de referencia de supermercados (nov 2026): pueden variar por tienda y ofertas. "Suele convenir" compara ese precio típico con el de Chile.</p>
         <p class="note">Ojo: compara supermercado con supermercado. En kioscos, aeropuertos y estaciones todo es más caro, allá y acá.</p>
         <button class="btn ghost" id="seedBtn" style="margin-top:4px">Restaurar lista base</button>
       </div>
@@ -231,22 +236,35 @@
   var store = load("dm_rates", null) || {r:Object.assign({},DEFAULT), ts:DEFAULT_TS, src:"original"};
   var manual = load("dm_manual", false);
   var fee = load("dm_fee", 0);
-  // Precios de supermercado en Chile (Lider/Jumbo), noviembre 2026. Referencia.
+  // Precios de supermercado en Chile (Lider/Jumbo) y referencias en España, Polonia e Israel.
+  // Recopilados en noviembre 2026 desde supermercados y comparadores de precios. Referencia: varían por tienda y ofertas.
   var SEED = [
-    {n:"Coca-Cola lata 350 ml", p:1000},
-    {n:"Coca-Cola botella 591 ml", p:1350},
-    {n:"Agua con gas 600 ml (Vital/Cachantún)", p:900},
+    {n:"Coca-Cola lata 350 ml", p:1000, r:{EUR:[0.99,"lata 330 ml · Mercadona"], PLN:[3.99,"lata 330 ml + 0,50 zł depósito"], ILS:[6.00,"lata 330 ml · precio suelto"]}},
+    {n:"Coca-Cola botella 591 ml", p:1350, r:{EUR:[1.60,"botella 500 ml · Mercadona"]}},
+    {n:"Agua sin gas chica (500-600 ml)", p:900, r:{EUR:[0.61,"Font Vella 500 ml"], ILS:[4.60,"Mey Eden 500 ml"]}},
+    {n:"Agua con gas 600 ml (Vital/Cachantún)", p:900, r:{EUR:[0.94,"Fonter 500 ml"], ILS:[6.20,"soda Mey Eden 330 ml"]}},
+    {n:"Agua mineral 1,5 L", p:1180, r:{EUR:[0.67,"Lanjarón 1,5 L"], ILS:[2.77,"Mey Eden 1,5 L (en pack de 6)"]}},
     {n:"Agua Evian 500 ml", p:2250},
-    {n:"Red Bull lata 250 ml", p:1590},
-    {n:"Snickers 53 g", p:1490},
+    {n:"Red Bull lata 250 ml", p:1590, r:{EUR:[1.69,"Mercadona / Dia"], PLN:[6.49,"Biedronka / Lidl"], ILS:[6.20,"Tiv Taam / Mahsanei"]}},
+    {n:"Snickers 53 g", p:1490, r:{EUR:[0.82,"50 g · en pack de 10"], PLN:[2.66,"50 g · en pack de 3"], ILS:[5.90,"50 g"]}},
     {n:"Twix 50 g", p:1390},
     {n:"Kit Kat 42 g", p:1350},
     {n:"Milky Way 48 g", p:1490},
-    {n:"Papas Lay's 180 g", p:2190},
-    {n:"Big Mac (McDonald's)", p:4790}
+    {n:"Papas Lay's 180 g", p:2190, r:{PLN:[6.59,"Lay's 130 g"]}},
+    {n:"Pringles 165 g", p:4490, r:{EUR:[2.65,"165 g"], PLN:[10.99,"165 g"], ILS:[11.90,"165 g"]}},
+    {n:"Chocolate Milka 100 g", p:3190, r:{EUR:[2.25,"Milka 100 g"], PLN:[6.99,"Milka 100 g"], ILS:[9.26,"Elite 100 g (marca local)"]}},
+    {n:"Big Mac (McDonald's)", p:4790, r:{EUR:[5.40,"precio típico"], PLN:[22.90,"promedio 2026"], ILS:[23.00,"precio McDonald's Israel"]}}
   ];
+  var REF = {}; SEED.forEach(function(it){ if(it.r) REF[it.n]=it.r; });
+  var CNAME = {EUR:"España", PLN:"Polonia", ILS:"Israel", USD:"EE.UU."};
+  var SEED_V = 2;
   var items = load("dm_items", null);
-  if(!items){ items = SEED.slice(); save("dm_items", items); }
+  if(!items){ items = SEED.map(function(it){ return {n:it.n,p:it.p}; }); save("dm_items", items); save("dm_seed_v", SEED_V); }
+  else if((load("dm_seed_v",1)||1) < SEED_V){
+    var names = items.map(function(i){ return i.n; });
+    SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p}); });
+    save("dm_items", items); save("dm_seed_v", SEED_V);
+  }
   var base = load("dm_base", "EUR");
   var cmpCur = load("dm_cmp", "EUR");
   var selItem = -1;
@@ -346,7 +364,7 @@
     var h="";
     CUR.forEach(function(c){ if(c.c==="CLP") return; h+='<button class="cp'+(c.c===cmpCur?' on':'')+'" data-c="'+c.c+'">'+c.f+' '+c.s+'</button>'; });
     $("cmpCur").innerHTML=h; $("cmpSym").textContent=cur(cmpCur).s;
-    Array.prototype.forEach.call(document.querySelectorAll(".cp"),function(b){ b.onclick=function(){ cmpCur=b.getAttribute("data-c"); save("dm_cmp",cmpCur); renderCmpCur(); renderItems(); verdict(); }; });
+    Array.prototype.forEach.call(document.querySelectorAll(".cp"),function(b){ b.onclick=function(){ cmpCur=b.getAttribute("data-c"); save("dm_cmp",cmpCur); renderCmpCur(); renderItems(); showSel(); verdict(); }; });
   }
   function verdict(){
     var here=num($("here").value)*rate(cmpCur), chile=intNum($("chile").value), box=$("verdict");
@@ -357,9 +375,18 @@
     else { t="Está caro"; cls="v-bad"; d="Aquí sale "+fmtCLP(here)+": "+a+"% más caro ("+fmtCLP(here-chile)+" de diferencia)."; }
     box.className="verdict show "+cls; $("vt").textContent=t; $("vd").textContent=d;
   }
+  function refOf(it){ var r=REF[it.n]; return r && r[cmpCur] ? r[cmpCur] : null; }
+  function refBadge(it){
+    var r=refOf(it); if(!r) return "";
+    var clp=r[0]*rate(cmpCur), diff=(clp-it.p)/it.p*100, cls, txt;
+    if(diff<=-10){ cls="rb-good"; txt="suele convenir"; }
+    else if(diff<10){ cls="rb-mid"; txt="precio similar"; }
+    else { cls="rb-bad"; txt="suele ser más caro"; }
+    return '<div class="ref"><span class="rb '+cls+'">'+txt+'</span> '+CNAME[cmpCur]+': '+cur(cmpCur).s+' '+fmt(r[0],2)+' · '+esc(r[1])+'</div>';
+  }
   function showSel(){
     var el=$("selName");
-    if(selItem>-1 && items[selItem]){ el.textContent="Comparando: "+items[selItem].n; el.className="selname show"; }
+    if(selItem>-1 && items[selItem]){ var r=refOf(items[selItem]); el.textContent="Comparando: "+items[selItem].n+(r?" · típico en "+CNAME[cmpCur]+": "+cur(cmpCur).s+" "+fmt(r[0],2):""); el.className="selname show"; }
     else { el.className="selname"; el.textContent=""; }
   }
   function keepSelVisible(){
@@ -373,7 +400,7 @@
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
   function renderItems(){
     var cc=cur(cmpCur);
-    var h=""; items.forEach(function(it,i){ var eq=it.p/rate(cmpCur); h+='<li'+(i===selItem?' class="on"':'')+'><span class="n" data-i="'+i+'">'+esc(it.n)+'</span><span class="p" data-i="'+i+'"><b>'+fmtCLP(it.p)+'</b><small>≈ '+cc.s+' '+fmt(eq,2)+'</small></span><button class="x" data-d="'+i+'" aria-label="Borrar">×</button></li>'; });
+    var h=""; items.forEach(function(it,i){ var eq=it.p/rate(cmpCur); h+='<li'+(i===selItem?' class="on"':'')+'><span class="n" data-i="'+i+'">'+esc(it.n)+refBadge(it)+'</span><span class="p" data-i="'+i+'"><b>'+fmtCLP(it.p)+'</b><small>≈ '+cc.s+' '+fmt(eq,2)+'</small></span><button class="x" data-d="'+i+'" aria-label="Borrar">×</button></li>'; });
     if(!items.length) h='<li style="color:var(--muted);font-size:13px">Todavía no hay productos.</li>';
     $("items").innerHTML=h;
     Array.prototype.forEach.call(document.querySelectorAll("#items .n, #items .p"),function(el){ el.onclick=function(){ var idx=+el.getAttribute("data-i"), it=items[idx]; selItem=idx;
