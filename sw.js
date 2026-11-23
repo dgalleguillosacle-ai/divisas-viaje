@@ -1,5 +1,5 @@
 // Divisas Viaje: guarda la app en el teléfono para que abra sin internet.
-const CACHE = "divisas-viaje-v4";
+const CACHE = "divisas-viaje-v5";
 const APP = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
