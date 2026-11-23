@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14363f">
+<meta name="description" content="Conversor de monedas para el viaje: euro, zloty, shekel y dólar a pesos chilenos. Funciona sin internet.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Divisas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Divisas Viaje</title>
+<style>
+  :root{
+    --bg:#f3f1ec; --card:#fff; --ink:#1b1b19; --muted:#6c675e; --line:#e2ddd2;
+    --accent:#14363f; --accent2:#2a6b7c; --sel:#e2eef1; --key:#ffffff; --keyop:#e6efe9; --keyeq:#2a6b7c;
+    --good:#2f7d4f; --good-soft:#e2f1e7; --mid:#9c6c12; --mid-soft:#f6ebd4; --bad:#b23a2c; --bad-soft:#f6e1dd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#111416; --card:#1b1f22; --ink:#f0eee8; --muted:#9d988e; --line:#2d3237;
+      --accent:#0d2329; --accent2:#7fb7c9; --sel:#1f3238; --key:#22272b; --keyop:#1f2e28; --keyeq:#3d8296;
+      --good:#6fc58e; --good-soft:#1c3324; --mid:#e0b25a; --mid-soft:#3a2f18; --bad:#ec7e70; --bad-soft:#3c211d; }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow-x:hidden;touch-action:manipulation}
+  button,input{font-family:inherit}
+  .app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+  header{background:var(--accent);color:#fff;padding:10px 14px 6px;padding-top:max(10px,env(safe-area-inset-top));flex:0 0 auto}
+  .top{display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:18px;margin:0;font-weight:700}
+  .status{font-size:12px;opacity:.85;margin-top:3px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+  .status span:last-child{overflow:hidden;text-overflow:ellipsis}
+  .dot{width:8px;height:8px;border-radius:50%;background:#9aa;display:inline-block}
+  .dot.on{background:#5fd38a}.dot.off{background:#e8a23a}
+  .refresh{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .install{display:none;align-items:center;gap:8px;background:#1d4c58;color:#fff;padding:7px 10px 7px 14px;font-size:13px;flex:0 0 auto}
+  .install.show{display:flex}
+  .install span{flex:1;line-height:1.25}
+  .ibtn{background:#7fd0e4;color:#0d2329;border:0;border-radius:999px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer}
+  .ibtn.hide{display:none}
+  .iclose{background:transparent;border:0;color:rgba(255,255,255,.7);font-size:20px;cursor:pointer;padding:0 4px}
+  nav{display:grid;grid-template-columns:repeat(3,1fr);background:var(--accent);flex:0 0 auto}
+  nav button{background:transparent;border:0;color:rgba(255,255,255,.7);padding:8px 0 9px;font-size:14px;font-weight:600;border-bottom:3px solid transparent;cursor:pointer}
+  nav button.on{color:#fff;border-bottom-color:#7fd0e4}
+  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column}
+  .view.on{display:flex}
+  #v-comp.on,#v-cfg.on{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  /* Conversor */
+  .list{background:var(--card);border-bottom:1px solid var(--line)}
+  .list{flex:0 0 auto}
+  .row{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--line);cursor:pointer;min-height:56px}
+  .row:first-child{border-top:0}
+  .row.sel{background:var(--sel)}
+  .flag{font-size:24px;width:30px;text-align:center}
+  .cc{flex:0 0 auto}
+  .cc b{display:block;font-size:15px}
+  .cc span{font-size:12px;color:var(--muted)}
+  .val{flex:1;min-width:0;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden}
+  .val .n{font-size:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .val .n.long{font-size:18px}
+  .row.sel .val .n{color:var(--accent2)}
+  .val .expr{font-size:12px;color:var(--muted);min-height:14px;white-space:nowrap}
+  .hint{font-size:11px;color:var(--muted);text-align:center;padding:4px 10px;flex:0 0 auto}
+  .pad{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(40px,1fr));gap:6px;padding:4px 10px 10px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:400px}
+  .k{border:0;background:var(--key);color:var(--ink);border-radius:12px;font-size:22px;padding:0;box-shadow:0 1px 0 var(--line);cursor:pointer;font-variant-numeric:tabular-nums}
+  .k:active{transform:scale(.97)}
+  @media (max-height:700px){
+    .row{min-height:48px;padding:4px 14px}
+    .cc span{font-size:11px}
+    .val .n{font-size:20px}
+    .hint{display:none}
+    .pad{grid-template-rows:repeat(5,minmax(36px,1fr));gap:5px;padding-top:6px}
+    .k{font-size:20px}
+  }
+  .k.op{background:var(--keyop);color:var(--accent2);font-weight:600}
+  .k.eq{background:var(--keyeq);color:#fff;font-weight:700}
+  .k.c{color:var(--bad);font-weight:600}
+  /* Comparar */
+  .pane{padding:12px 12px 24px}
+  .compcard{position:sticky;top:0;z-index:2;box-shadow:0 6px 12px -10px rgba(0,0,0,.35)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 8px}
+  .curpick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+  .cp{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:7px 0;font-size:14px;cursor:pointer}
+  .cp.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  .fld{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--bg);min-width:0}
+  .fld span{color:var(--muted);min-width:20px}
+  .fld input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-size:20px;padding:9px 0;outline:none;font-variant-numeric:tabular-nums}
+  .small{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .verdict{display:none;margin-top:10px;border-radius:12px;padding:9px 12px}
+  .selname{display:none;font-size:13px;color:var(--accent2);font-weight:600;margin:-2px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .selname.show{display:block}
+  .compcard{padding:12px 14px}
+  .compcard .curpick{margin-bottom:8px}
+  .verdict.show{display:block}
+  .verdict .t{font-size:17px;font-weight:700}.verdict .d{font-size:13px;margin-top:1px}
+  .v-good{background:var(--good-soft);color:var(--good)}.v-mid{background:var(--mid-soft);color:var(--mid)}.v-bad{background:var(--bad-soft);color:var(--bad)}
+  ul.items{list-style:none;margin:8px 0 0;padding:0}
+  ul.items li{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+  ul.items li.on{background:var(--sel);margin:0 -10px;padding-left:10px;padding-right:10px;border-radius:10px;border-top-color:transparent;box-shadow:inset 3px 0 0 var(--accent2)}
+  ul.items li.on + li{border-top-color:transparent}
+  ul.items li.on .n{font-weight:600;color:var(--accent2)}
+  ul.items .n{flex:1;min-width:0;cursor:pointer;font-size:15px}
+  ul.items .p{text-align:right;font-variant-numeric:tabular-nums;cursor:pointer;line-height:1.2}
+  ul.items .p b{display:block;font-size:15px}
+  ul.items .p small{color:var(--muted);font-size:12px}
+  .x{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer}
+  .add{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:6px;margin-top:8px}
+  .add input,.rate input,.feein{border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
+  .btn{border:0;background:var(--accent2);color:#fff;border-radius:10px;padding:9px 14px;font-size:16px;font-weight:600;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)}
+  .rate{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .tips{margin:0;padding-left:18px;font-size:14px}.tips li{margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top">
+      <h1>Divisas Viaje</h1>
+      <button class="refresh" id="refreshBtn">↻ Actualizar</button>
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Cargando…</span></div>
+  </header>
+  <div class="install" id="installBar">
+    <span id="installTxt"></span>
+    <button class="ibtn" id="installBtn">Instalar</button>
+    <button class="iclose" id="installClose" aria-label="Cerrar">×</button>
+  </div>
+  <nav>
+    <button class="on" data-v="conv">Conversor</button>
+    <button data-v="comp">¿Conviene?</button>
+    <button data-v="cfg">Tasas</button>
+  </nav>
+
+  <!-- CONVERSOR -->
+  <section class="view on" id="v-conv">
+    <div class="list" id="list"></div>
+    <div class="hint">Toca una moneda para escribir en ella · puedes sumar: 12 + 8,5</div>
+    <div class="pad" id="pad"></div>
+  </section>
+
+  <!-- COMPARAR -->
+  <section class="view" id="v-comp">
+    <div class="pane">
+      <div class="card compcard">
+        <p class="lbl">Comparar con Chile</p>
+        <div class="curpick" id="cmpCur"></div>
+        <div class="selname" id="selName"></div>
+        <div class="two">
+          <div><div class="small">Precio aquí</div><div class="fld"><span id="cmpSym">€</span><input id="here" inputmode="decimal" placeholder="0"></div></div>
+          <div><div class="small">Precio en Chile</div><div class="fld"><span>$</span><input id="chile" inputmode="numeric" placeholder="0"></div></div>
+        </div>
+        <div class="verdict" id="verdict"><div class="t" id="vt"></div><div class="d" id="vd"></div></div>
+      </div>
+      <div class="card">
+        <p class="lbl">Mis precios de Chile</p>
+        <div class="small">Precio en Chile y cuánto debería costar allá para que sea igual. Toca uno para compararlo.</div>
+        <ul class="items" id="items"></ul>
+        <div class="add">
+          <input id="newName" placeholder="Producto">
+          <input id="newPrice" inputmode="numeric" placeholder="$ CLP">
+          <button class="btn" id="addBtn">+</button>
+        </div>
+        <p class="note">Ojo: compara supermercado con supermercado. En kioscos, aeropuertos y estaciones todo es más caro, allá y acá.</p>
+        <button class="btn ghost" id="seedBtn" style="margin-top:4px">Restaurar lista base</button>
+      </div>
+      <div class="card">
+        <p class="lbl">Tips</p>
+        <ul class="tips">
+          <li>Al pagar con tarjeta elige <b>siempre moneda local</b>, nunca "pesos chilenos".</li>
+          <li>Menos de 10% de diferencia no vale el peso en la maleta.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TASAS -->
+  <section class="view" id="v-cfg">
+    <div class="pane">
+      <div class="card">
+        <p class="lbl">Pesos chilenos por 1 unidad</p>
+        <div class="rate" id="rateForm"></div>
+        <p class="note" id="rateInfo"></p>
+      </div>
+      <div class="card">
+        <p class="lbl">Recargo de la tarjeta (%)</p>
+        <input class="feein" id="fee" inputmode="decimal" placeholder="0">
+        <p class="note">Opcional. Si tu banco cobra un % por compras en el extranjero, ponlo aquí y todos los cálculos lo incluyen.</p>
+      </div>
+      <button class="btn ghost" id="resetBtn">Volver a las tasas originales</button>
+      <div class="card" style="margin-top:12px">
+        <p class="lbl">Compartir con el grupo</p>
+        <p class="note" style="margin-top:0">Manda el link a tus compañeros para que la instalen en su celular.</p>
+        <button class="btn" id="shareBtn" style="width:100%">Compartir app</button>
+        <p class="note" id="shareMsg"></p>
+      </div>
+      <p class="note" style="text-align:center">Divisas Viaje · funciona sin internet una vez instalada</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // ---------- datos base ----------
+  var CUR = [
+    {c:"CLP", f:"🇨🇱", n:"Peso chileno", s:"$",  d:0},
+    {c:"EUR", f:"🇪🇸", n:"Euro · España", s:"€",  d:2},
+    {c:"PLN", f:"🇵🇱", n:"Zloty · Polonia", s:"zł", d:2},
+    {c:"ILS", f:"🇮🇱", n:"Shekel · Israel", s:"₪",  d:2},
+    {c:"USD", f:"🇺🇸", n:"Dólar", s:"US$", d:2}
+  ];
+  // CLP por 1 unidad. Valores aproximados al 21-nov-2026, usados si nunca hubo internet.
+  var DEFAULT = {CLP:1, EUR:1090, PLN:256, ILS:308, USD:966};
+  var DEFAULT_TS = Date.UTC(2026,10,21,12,0,0);
+  var SOURCES = [
+    {url:"https://open.er-api.com/v6/latest/CLP", parse:function(j){ return j && j.result==="success" ? j.rates : null; }},
+    {url:"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/clp.json", parse:function(j){
+      if(!j || !j.clp) return null; var r={}; for(var k in j.clp) r[k.toUpperCase()] = j.clp[k]; return r; }}
+  ];
+
+  // ---------- almacenamiento ----------
+  function load(k,d){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+  var store = load("dm_rates", null) || {r:Object.assign({},DEFAULT), ts:DEFAULT_TS, src:"original"};
+  var manual = load("dm_manual", false);
+  var fee = load("dm_fee", 0);
+  // Precios de supermercado en Chile (Lider/Jumbo), noviembre 2026. Referencia.
+  var SEED = [
+    {n:"Coca-Cola lata 350 ml", p:1000},
+    {n:"Coca-Cola botella 591 ml", p:1350},
+    {n:"Agua con gas 600 ml (Vital/Cachantún)", p:900},
+    {n:"Agua Evian 500 ml", p:2250},
+    {n:"Red Bull lata 250 ml", p:1590},
+    {n:"Snickers 53 g", p:1490},
+    {n:"Twix 50 g", p:1390},
+    {n:"Kit Kat 42 g", p:1350},
+    {n:"Milky Way 48 g", p:1490},
+    {n:"Papas Lay's 180 g", p:2190},
+    {n:"Big Mac (McDonald's)", p:4790}
+  ];
+  var items = load("dm_items", null);
+  if(!items){ items = SEED.slice(); save("dm_items", items); }
+  var base = load("dm_base", "EUR");
+  var cmpCur = load("dm_cmp", "EUR");
+  var selItem = -1;
+  var expr = "";
+  var online = null;
+
+  function $(id){ return document.getElementById(id); }
+  function rate(c){ return c==="CLP" ? 1 : store.r[c] * (1 + (fee||0)/100); }
+  function cur(c){ for(var i=0;i<CUR.length;i++) if(CUR[i].c===c) return CUR[i]; }
+  function fmt(v, d){
+    if(!isFinite(v)) return "—";
+    return v.toLocaleString("es-CL",{minimumFractionDigits:d?Math.min(d, Math.abs(v)<100?2:0):0, maximumFractionDigits:d});
+  }
+  function fmtCLP(v){ return "$" + Math.round(v).toLocaleString("es-CL"); }
+  function num(s){ if(!s) return 0; s=String(s).trim().replace(/\s/g,""); if(s.indexOf(",")>-1) s=s.replace(/\./g,"").replace(",","."); var n=parseFloat(s); return isNaN(n)?0:n; }
+  function intNum(s){ var n=parseInt(String(s).replace(/[^\d]/g,""),10); return isNaN(n)?0:n; }
+  function when(ts){
+    var d=new Date(ts), now=new Date();
+    var hh=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+    if(d.toDateString()===now.toDateString()) return "hoy "+hh;
+    return d.getDate()+"/"+(d.getMonth()+1)+" "+hh;
+  }
+
+  // ---------- calculadora ----------
+  function evalExpr(s){
+    if(!s) return 0;
+    var t = s.match(/(\d+(?:,\d*)?|,\d+|[+\-×÷])/g); if(!t) return 0;
+    var nums=[], ops=[];
+    var prec={"+":1,"-":1,"×":2,"÷":2};
+    function apply(){ var b=nums.pop(), a=nums.pop(), o=ops.pop();
+      nums.push(o==="+"?a+b:o==="-"?a-b:o==="×"?a*b:(b===0?NaN:a/b)); }
+    var expectNum=true;
+    for(var i=0;i<t.length;i++){
+      var x=t[i];
+      if(/[+\-×÷]/.test(x)){
+        if(expectNum) continue;
+        while(ops.length && prec[ops[ops.length-1]]>=prec[x]) apply();
+        ops.push(x); expectNum=true;
+      } else { nums.push(parseFloat(x.replace(",","."))||0); expectNum=false; }
+    }
+    if(expectNum && ops.length) ops.pop();
+    while(ops.length && nums.length>1) apply();
+    return nums.length?nums[0]:0;
+  }
+
+  function press(k){
+    if(k==="C"){ expr=""; }
+    else if(k==="⌫"){ expr=expr.slice(0,-1); }
+    else if(k==="="){ var v=evalExpr(expr); expr = v ? String(+v.toFixed(cur(base).d||0)).replace(".",",") : ""; }
+    else if(/[+\-×÷]/.test(k)){ if(!expr) return; if(/[+\-×÷]$/.test(expr)) expr=expr.slice(0,-1); expr+=k; }
+    else if(k===","){ var last=expr.split(/[+\-×÷]/).pop(); if(last.indexOf(",")>-1) return; expr += last===""?"0,":","; }
+    else { if(expr.length>18) return; var lastN=expr.split(/[+\-×÷]/).pop(); if(lastN==="0") expr=expr.slice(0,-1); expr+=k; }
+    save("dm_expr", expr); renderList();
+  }
+
+  function renderList(){
+    var amount = evalExpr(expr);
+    var inCLP = amount * rate(base);
+    var h="";
+    CUR.forEach(function(c){
+      var sel = c.c===base;
+      var v = sel ? amount : inCLP / rate(c.c);
+      var shown = sel && expr ? expr : fmt(v, c.d);
+      var sub = sel ? (/[+\-×÷]/.test(expr) ? "= "+fmt(amount,c.d) : "") : (c.c!=="CLP" ? "1 "+c.s+" = "+fmtCLP(rate(c.c)) : "");
+      var txt = c.s+' '+(shown||"0");
+      h += '<div class="row'+(sel?' sel':'')+'" data-c="'+c.c+'"><div class="flag">'+c.f+'</div>'+
+           '<div class="cc"><b>'+c.c+'</b><span>'+c.n+'</span></div>'+
+           '<div class="val"><div class="n'+(txt.length>13?' long':'')+'">'+txt+'</div><div class="expr">'+sub+'</div></div></div>';
+    });
+    $("list").innerHTML=h;
+    Array.prototype.forEach.call(document.querySelectorAll(".row"),function(r){
+      r.onclick=function(){
+        var c=r.getAttribute("data-c"); if(c===base) return;
+        var amount = evalExpr(expr), inCLP = amount*rate(base);
+        base=c; save("dm_base",base);
+        var nv = inCLP / rate(c);
+        expr = amount ? String(+nv.toFixed(cur(c).d)).replace(".",",") : "";
+        renderList();
+      };
+    });
+  }
+
+  function buildPad(){
+    var keys=["7","8","9","÷","4","5","6","×","1","2","3","-","C","0",",","+","⌫","="];
+    var h="";
+    keys.forEach(function(k,i){
+      var cls="k"+(/[+\-×÷]/.test(k)?" op":"")+(k==="="?" eq":"")+(k==="C"?" c":"");
+      var style = k==="=" ? ' style="grid-column:span 3"' : "";
+      h+='<button class="'+cls+'" data-k="'+k+'"'+style+'>'+(k==="-"?"−":k)+'</button>';
+    });
+    $("pad").innerHTML=h;
+    Array.prototype.forEach.call(document.querySelectorAll(".k"),function(b){ b.onclick=function(){ press(b.getAttribute("data-k")); }; });
+  }
+
+  // ---------- comparar ----------
+  function renderCmpCur(){
+    var h="";
+    CUR.forEach(function(c){ if(c.c==="CLP") return; h+='<button class="cp'+(c.c===cmpCur?' on':'')+'" data-c="'+c.c+'">'+c.f+' '+c.s+'</button>'; });
+    $("cmpCur").innerHTML=h; $("cmpSym").textContent=cur(cmpCur).s;
+    Array.prototype.forEach.call(document.querySelectorAll(".cp"),function(b){ b.onclick=function(){ cmpCur=b.getAttribute("data-c"); save("dm_cmp",cmpCur); renderCmpCur(); renderItems(); verdict(); }; });
+  }
+  function verdict(){
+    var here=num($("here").value)*rate(cmpCur), chile=intNum($("chile").value), box=$("verdict");
+    if(!here||!chile){ box.className="verdict"; return; }
+    var diff=(here-chile)/chile*100, a=Math.abs(diff).toFixed(0), t,d,cls;
+    if(diff<=-10){ t="Conviene"; cls="v-good"; d="Aquí sale "+fmtCLP(here)+": "+a+"% más barato (ahorras "+fmtCLP(chile-here)+")."; }
+    else if(diff<10){ t="Más o menos igual"; cls="v-mid"; d="Aquí sale "+fmtCLP(here)+", "+a+"% "+(diff<0?"más barato":"más caro")+". No vale la pena por precio."; }
+    else { t="Está caro"; cls="v-bad"; d="Aquí sale "+fmtCLP(here)+": "+a+"% más caro ("+fmtCLP(here-chile)+" de diferencia)."; }
+    box.className="verdict show "+cls; $("vt").textContent=t; $("vd").textContent=d;
+  }
+  function showSel(){
+    var el=$("selName");
+    if(selItem>-1 && items[selItem]){ el.textContent="Comparando: "+items[selItem].n; el.className="selname show"; }
+    else { el.className="selname"; el.textContent=""; }
+  }
+  function keepSelVisible(){
+    var li=document.querySelector("#items li.on"); if(!li) return;
+    var box=$("v-comp"), card=document.querySelector(".compcard");
+    var b=box.getBoundingClientRect(), c=card.getBoundingClientRect(), r=li.getBoundingClientRect();
+    var topLimit=c.bottom+8;
+    if(r.top<topLimit) box.scrollTop -= (topLimit-r.top);
+    else if(r.bottom>b.bottom-8) box.scrollTop += (r.bottom-(b.bottom-8));
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function renderItems(){
+    var cc=cur(cmpCur);
+    var h=""; items.forEach(function(it,i){ var eq=it.p/rate(cmpCur); h+='<li'+(i===selItem?' class="on"':'')+'><span class="n" data-i="'+i+'">'+esc(it.n)+'</span><span class="p" data-i="'+i+'"><b>'+fmtCLP(it.p)+'</b><small>≈ '+cc.s+' '+fmt(eq,2)+'</small></span><button class="x" data-d="'+i+'" aria-label="Borrar">×</button></li>'; });
+    if(!items.length) h='<li style="color:var(--muted);font-size:13px">Todavía no hay productos.</li>';
+    $("items").innerHTML=h;
+    Array.prototype.forEach.call(document.querySelectorAll("#items .n, #items .p"),function(el){ el.onclick=function(){ var idx=+el.getAttribute("data-i"), it=items[idx]; selItem=idx;
+        Array.prototype.forEach.call(document.querySelectorAll("#items li"),function(li,j){ li.classList.toggle("on", j===idx); });
+        $("chile").value=it.p.toLocaleString("es-CL"); $("here").value=""; verdict();
+        showSel(); keepSelVisible();
+        try{ $("here").focus({preventScroll:true}); }catch(e){} }; });
+    Array.prototype.forEach.call(document.querySelectorAll("#items .x"),function(b){ b.onclick=function(){ var d=+b.getAttribute("data-d"); items.splice(d,1); if(selItem===d) selItem=-1; else if(selItem>d) selItem--; save("dm_items",items); renderItems(); showSel(); }; });
+  }
+
+  // ---------- tasas ----------
+  function renderRates(){
+    var h="";
+    CUR.forEach(function(c){ if(c.c==="CLP") return; h+='<label for="r_'+c.c+'">'+c.f+' 1 '+c.s+' =</label><input id="r_'+c.c+'" inputmode="decimal" value="'+fmt(store.r[c.c],2)+'">'; });
+    $("rateForm").innerHTML=h;
+    CUR.forEach(function(c){ if(c.c==="CLP") return;
+      $("r_"+c.c).onchange=function(e){ var v=num(e.target.value); if(v>0){ store.r[c.c]=v; store.ts=Date.now(); store.src="manual"; manual=true; save("dm_manual",true); save("dm_rates",store); updateStatus(); renderList(); verdict(); } };
+    });
+    $("rateInfo").textContent = manual
+      ? "Estás usando tasas escritas a mano. No se actualizan solas hasta que toques \"Volver a las tasas originales\" o \"Actualizar\"."
+      : "Se actualizan solas cada vez que hay internet. Si ves otra tasa en el banco, puedes escribirla aquí.";
+    $("fee").value = fee || "";
+  }
+
+  function updateStatus(){
+    var dot=$("dot"), t=$("statusTxt");
+    var age = when(store.ts);
+    if(store.src==="manual"){ dot.className="dot"; t.textContent="Tasas manuales · "+age; return; }
+    if(online===true){ dot.className="dot on"; t.textContent="En línea · tasas de "+age; }
+    else if(online===false){ dot.className="dot off"; t.textContent=(navigator.onLine?"No se pudo actualizar":"Sin internet")+" · usando tasas de "+(store.src==="original"?"21/11 (originales)":age); }
+    else { dot.className="dot"; t.textContent="Tasas de "+(store.src==="original"?"21/11 (originales)":age); }
+  }
+
+  function fetchJSON(url, ms){
+    return new Promise(function(res,rej){
+      var done=false, to=setTimeout(function(){ if(!done){ done=true; rej(new Error("timeout")); } }, ms||8000);
+      try{
+        fetch(url,{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+          .then(function(j){ if(!done){ done=true; clearTimeout(to); res(j); } })
+          .catch(function(e){ if(!done){ done=true; clearTimeout(to); rej(e); } });
+      }catch(e){ if(!done){ done=true; clearTimeout(to); rej(e); } }
+    });
+  }
+
+  function refresh(force){
+    if(manual && !force){ online = navigator.onLine; updateStatus(); return; }
+    $("statusTxt").textContent="Actualizando…";
+    var i=0;
+    (function next(){
+      if(i>=SOURCES.length){ online=false; updateStatus(); return; }
+      var s=SOURCES[i++];
+      fetchJSON(s.url).then(function(j){
+        var r=s.parse(j); if(!r) throw new Error("bad");
+        var nr={CLP:1}, ok=true;
+        CUR.forEach(function(c){ if(c.c==="CLP") return; var v=r[c.c]; if(!v||!(v>0)){ ok=false; return; } nr[c.c]=1/v; });
+        if(!ok) throw new Error("missing");
+        store={r:nr, ts:Date.now(), src:"api"}; manual=false; save("dm_manual",false); save("dm_rates",store);
+        online=true; updateStatus(); renderList(); renderRates(); renderItems(); verdict();
+      }).catch(function(){ next(); });
+    })();
+  }
+
+  // ---------- navegación y eventos ----------
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){
+    b.onclick=function(){
+      Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(x){x.classList.remove("on");});
+      Array.prototype.forEach.call(document.querySelectorAll(".view"),function(x){x.classList.remove("on");});
+      b.classList.add("on"); $("v-"+b.getAttribute("data-v")).classList.add("on");
+    };
+  });
+  $("refreshBtn").onclick=function(){ refresh(true); };
+  $("here").oninput=function(){ verdict(); keepSelVisible(); };
+  $("chile").oninput=function(e){ var n=intNum(e.target.value); e.target.value=n?n.toLocaleString("es-CL"):""; if(selItem>-1){ selItem=-1; renderItems(); showSel(); } verdict(); };
+  $("newPrice").oninput=function(e){ var n=intNum(e.target.value); e.target.value=n?n.toLocaleString("es-CL"):""; };
+  $("addBtn").onclick=function(){ var n=$("newName").value.trim(), p=intNum($("newPrice").value); if(!n||!p) return; items.push({n:n,p:p}); save("dm_items",items); $("newName").value=""; $("newPrice").value=""; renderItems(); };
+  $("seedBtn").onclick=function(){ var names=items.map(function(i){return i.n;}); SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p}); }); save("dm_items",items); renderItems(); };
+  $("fee").oninput=function(e){ fee=num(e.target.value); save("dm_fee",fee); renderList(); renderItems(); verdict(); };
+  $("resetBtn").onclick=function(){ manual=false; save("dm_manual",false); fee=0; save("dm_fee",0); store={r:Object.assign({},DEFAULT),ts:DEFAULT_TS,src:"original"}; save("dm_rates",store); renderRates(); renderList(); verdict(); refresh(true); };
+  window.addEventListener("online",function(){ refresh(false); });
+  window.addEventListener("offline",function(){ online=false; updateStatus(); });
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible" && Date.now()-store.ts > 3*3600*1000) refresh(false);
+  });
+
+  // ---------- instalar como app ----------
+  var deferredPrompt=null;
+  var isStandalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone===true;
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  var isHttp = /^https?:$/.test(location.protocol);
+  function showInstall(txt, withBtn){
+    if(isStandalone || load("dm_install_x", false)) return;
+    $("installTxt").innerHTML=txt; $("installBtn").className="ibtn"+(withBtn?"":" hide"); $("installBar").className="install show";
+  }
+  window.addEventListener("beforeinstallprompt",function(e){ e.preventDefault(); deferredPrompt=e; showInstall("Instálala como app y úsala sin internet", true); });
+  $("installBtn").onclick=function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt=null; $("installBar").className="install"; });
+  };
+  $("installClose").onclick=function(){ save("dm_install_x", true); $("installBar").className="install"; };
+  window.addEventListener("appinstalled",function(){ $("installBar").className="install"; });
+  if(isHttp && isIOS && !isStandalone){ showInstall("En iPhone: toca <b>Compartir</b> ⬆️ y luego <b>Agregar a inicio</b>", false); }
+  if(isHttp && "serviceWorker" in navigator){
+    window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+
+  // ---------- compartir ----------
+  $("shareBtn").onclick=function(){
+    var url = isHttp ? location.href.split("#")[0] : "";
+    var msg = $("shareMsg");
+    if(!url){ msg.textContent="Comparte el archivo por WhatsApp, o el link de la app cuando esté publicada."; return; }
+    var data={title:"Divisas Viaje", text:"Conversor para el viaje (euro, zloty, shekel). Instálalo y funciona sin internet:", url:url};
+    if(navigator.share){ navigator.share(data).catch(function(){}); return; }
+    try{ navigator.clipboard.writeText(url).then(function(){ msg.textContent="Link copiado: "+url; }, function(){ msg.textContent=url; }); }
+    catch(e){ msg.textContent=url; }
+  };
+
+  expr = load("dm_expr","") || "";
+  buildPad(); renderList(); renderCmpCur(); renderItems(); renderRates(); updateStatus();
+  refresh(false);
+})();
+</script>
+</body>
+</html>
