@@ -1,5 +1,5 @@
 // Divisas Viaje: guarda la app en el teléfono para que abra sin internet.
-const CACHE = "divisas-viaje-v6";
+const CACHE = "divisas-viaje-v7";
 const APP = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -8,7 +8,7 @@ self.addEventListener("install", e => {
 
 self.addEventListener("activate", e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== "divisas-flags").map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -17,6 +17,11 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // Banderas: se guardan la primera vez para verlas sin internet.
+  if (url.hostname === "flagcdn.com") {
+    e.respondWith(caches.open("divisas-flags").then(c => c.match(req).then(hit => hit || fetch(req).then(res => { if (res && (res.ok || res.type === "opaque")) c.put(req, res.clone()); return res; }))));
+    return;
+  }
   // Las tasas de cambio (otros sitios) van directo a internet; la app maneja el modo sin conexión.
   if (url.origin !== self.location.origin) return;
   // Archivos de la app: responde desde el teléfono y actualiza en segundo plano.

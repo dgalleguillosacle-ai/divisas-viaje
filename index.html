@@ -120,6 +120,35 @@
   .rate{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
   .note{font-size:12px;color:var(--muted);margin-top:8px}
   .tips{margin:0;padding-left:18px;font-size:14px}.tips li{margin-bottom:6px}
+  .list{max-height:52vh;max-height:52dvh;overflow-y:auto}
+  .listbar{display:flex;gap:8px;padding:6px 10px;border-top:1px solid var(--line)}
+  .listbar button{flex:1;border:1px dashed var(--line);background:transparent;color:var(--accent2);border-radius:10px;padding:7px 0;font-size:13.5px;font-weight:600;cursor:pointer}
+  .rm{margin-left:auto;border:0;background:var(--bad-soft);color:var(--bad);width:34px;height:34px;border-radius:50%;font-size:15px;font-weight:700;cursor:pointer}
+  .homeTag{margin-left:auto;font-size:12px;color:var(--muted)}
+  .hm{font-style:normal;font-size:10px;font-weight:600;color:var(--accent2);background:var(--sel);border-radius:6px;padding:1px 5px;vertical-align:2px;margin-left:3px}
+  .row.sel .hm{background:var(--card)}
+  .fc{display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:var(--line);color:var(--muted);box-shadow:none}
+  img.fl{object-fit:cover}
+  .curpick{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+  .lblbtn{cursor:pointer;border-bottom:1px dashed var(--muted)}
+  .seltools{display:none;margin:-2px 0 8px}.seltools.show{display:block}
+  .tbtn{border:1px solid var(--line);background:var(--bg);color:var(--accent2);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+  .tbtn.save{margin-top:8px;background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .homebtn{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left}
+  .pn{flex:1;min-width:0;display:flex;flex-direction:column}
+  .pn b{font-size:15px}.pn small{font-size:12px;color:var(--muted)}
+  .chg{font-size:13px;color:var(--accent2);font-weight:600}
+  .picker{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:flex-end;justify-content:center}
+  .picker.show{display:flex}
+  .sheet{background:var(--card);width:100%;max-width:480px;height:82vh;height:82dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding:12px 12px 0}
+  .pkhead{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px;font-size:17px}
+  .iclose.dark{color:var(--muted);font-size:26px}
+  #pkSearch{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px;background:var(--bg);color:var(--ink);outline:none}
+  #pkList{list-style:none;margin:8px 0 0;padding:0 0 env(safe-area-inset-bottom);overflow-y:auto;flex:1}
+  #pkList li{display:flex;align-items:center;gap:10px;padding:10px 6px;border-top:1px solid var(--line);cursor:pointer}
+  #pkList li.on{background:var(--sel);border-radius:10px}
+  #pkList li.empty{color:var(--muted);font-size:13px;cursor:default}
+  .ok{color:var(--accent2);font-weight:700}
 </style>
 </head>
 <body>
@@ -139,7 +168,7 @@
   <nav>
     <button class="on" data-v="conv">Conversor</button>
     <button data-v="comp">¿Conviene?</button>
-    <button data-v="cfg">Tasas</button>
+    <button data-v="cfg">Ajustes</button>
   </nav>
 
   <!-- CONVERSOR -->
@@ -153,25 +182,27 @@
   <section class="view" id="v-comp">
     <div class="pane">
       <div class="card compcard">
-        <p class="lbl">Comparar con Chile</p>
+        <p class="lbl"><span id="cmpTitle" class="lblbtn">Comparar con Chile</span></p>
         <div class="curpick" id="cmpCur"></div>
         <div class="selname" id="selName"></div>
+        <div class="seltools" id="selTools"><button class="tbtn" id="searchBtn">🔎 Buscar precio en internet</button></div>
         <div class="two">
           <div><div class="small">Precio aquí</div><div class="fld"><span id="cmpSym">€</span><input id="here" inputmode="decimal" placeholder="0"></div></div>
-          <div><div class="small">Precio en Chile</div><div class="fld"><span>$</span><input id="chile" inputmode="numeric" placeholder="0"></div></div>
+          <div><div class="small" id="homeLbl">Precio en Chile</div><div class="fld"><span id="homeSym">$</span><input id="chile" inputmode="numeric" placeholder="0"></div></div>
         </div>
         <div class="verdict" id="verdict"><div class="t" id="vt"></div><div class="d" id="vd"></div></div>
+        <button class="tbtn save" id="saveRef" style="display:none"></button>
       </div>
       <div class="card">
-        <p class="lbl">Mis precios de Chile</p>
-        <div class="small">Precio en Chile, cuánto debería costar allá para que salga igual y el precio típico de supermercado en el país elegido. Toca uno para compararlo.</div>
+        <p class="lbl" id="listTitle">Mis precios de Chile</p>
+        <div class="small">Tu precio de siempre, cuánto debería costar allá para que salga igual y el precio típico de supermercado en el país elegido. Toca uno para compararlo, buscar su precio en internet o guardar el precio que veas.</div>
         <ul class="items" id="items"></ul>
         <div class="add">
           <input id="newName" placeholder="Producto">
-          <input id="newPrice" inputmode="numeric" placeholder="$ CLP">
+          <input id="newPrice" inputmode="decimal" placeholder="$ CLP">
           <button class="btn" id="addBtn">+</button>
         </div>
-        <p class="note">Precios de referencia de supermercados (nov 2026): pueden variar por tienda y ofertas. "Suele convenir" compara ese precio típico con el de Chile.</p>
+        <p class="note">Precios de referencia de supermercados (nov 2026): pueden variar por tienda y ofertas. "Suele convenir" compara ese precio típico con el de tu país.</p>
         <p class="note">Ojo: compara supermercado con supermercado. En kioscos, aeropuertos y estaciones todo es más caro, allá y acá.</p>
         <button class="btn ghost" id="seedBtn" style="margin-top:4px">Restaurar lista base</button>
       </div>
@@ -189,7 +220,12 @@
   <section class="view" id="v-cfg">
     <div class="pane">
       <div class="card">
-        <p class="lbl">Pesos chilenos por 1 unidad</p>
+        <p class="lbl">Tu país de origen</p>
+        <button class="homebtn" id="homeBtn"></button>
+        <p class="note">La app compara todos los precios con la moneda de tu país.</p>
+      </div>
+      <div class="card">
+        <p class="lbl" id="rateLbl">Pesos chilenos por 1 unidad</p>
         <div class="rate" id="rateForm"></div>
         <p class="note" id="rateInfo"></p>
       </div>
@@ -210,23 +246,53 @@
   </section>
 </div>
 
+<div class="picker" id="picker">
+  <div class="sheet">
+    <div class="pkhead"><b id="pkTitle">Agregar divisa</b><button class="iclose dark" id="pkClose" aria-label="Cerrar">×</button></div>
+    <input id="pkSearch" placeholder="Buscar país o moneda…" autocomplete="off">
+    <ul id="pkList"></ul>
+  </div>
+</div>
+
 <script>
 (function(){
-  // ---------- datos base ----------
-  var CUR = [
-    {c:"CLP", f:"<svg class=\"fl\" viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#D52B1E\"/><rect width=\"30\" height=\"10\" fill=\"#fff\"/><rect width=\"10\" height=\"10\" fill=\"#0039A6\"/><polygon fill=\"#fff\" points=\"5,2 5.9,4.3 8.3,4.3 6.4,5.8 7.1,8.1 5,6.7 2.9,8.1 3.6,5.8 1.7,4.3 4.1,4.3\"/></svg>", n:"Peso chileno", s:"$",  d:0},
-    {c:"EUR", f:"<svg class=\"fl\" viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#AA151B\"/><rect y=\"5\" width=\"30\" height=\"10\" fill=\"#F1BF00\"/></svg>", n:"Euro · España", s:"€",  d:2},
-    {c:"PLN", f:"<svg class=\"fl\" viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#DC143C\"/><rect width=\"30\" height=\"10\" fill=\"#fff\"/></svg>", n:"Zloty · Polonia", s:"zł", d:2},
-    {c:"ILS", f:"<svg class=\"fl\" viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#fff\"/><rect y=\"2\" width=\"30\" height=\"2.6\" fill=\"#0038B8\"/><rect y=\"15.4\" width=\"30\" height=\"2.6\" fill=\"#0038B8\"/><g fill=\"none\" stroke=\"#0038B8\" stroke-width=\"0.9\"><polygon points=\"15,6 18.5,12 11.5,12\"/><polygon points=\"15,14 11.5,8 18.5,8\"/></g></svg>", n:"Shekel · Israel", s:"₪",  d:2},
-    {c:"USD", f:"<svg class=\"fl\" viewBox=\"0 0 30 20\"><rect width=\"30\" height=\"20\" fill=\"#B22234\"/><rect y=\"1.54\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect y=\"4.62\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect y=\"7.70\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect y=\"10.78\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect y=\"13.86\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect y=\"16.94\" width=\"30\" height=\"1.54\" fill=\"#fff\"/><rect width=\"12\" height=\"10.77\" fill=\"#3C3B6E\"/></svg>", n:"Dólar", s:"US$", d:2}
-  ];
-  // CLP por 1 unidad. Valores aproximados al 21-nov-2026, usados si nunca hubo internet.
+  // ---------- banderas y monedas ----------
+  var SVGF = {
+    CLP:'<svg class="fl" viewBox="0 0 30 20"><rect width="30" height="20" fill="#D52B1E"/><rect width="30" height="10" fill="#fff"/><rect width="10" height="10" fill="#0039A6"/><polygon fill="#fff" points="5,2 5.9,4.3 8.3,4.3 6.4,5.8 7.1,8.1 5,6.7 2.9,8.1 3.6,5.8 1.7,4.3 4.1,4.3"/></svg>',
+    EUR:'<svg class="fl" viewBox="0 0 30 20"><rect width="30" height="20" fill="#AA151B"/><rect y="5" width="30" height="10" fill="#F1BF00"/></svg>',
+    PLN:'<svg class="fl" viewBox="0 0 30 20"><rect width="30" height="20" fill="#DC143C"/><rect width="30" height="10" fill="#fff"/></svg>',
+    ILS:'<svg class="fl" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><rect y="2" width="30" height="2.6" fill="#0038B8"/><rect y="15.4" width="30" height="2.6" fill="#0038B8"/><g fill="none" stroke="#0038B8" stroke-width="0.9"><polygon points="15,6 18.5,12 11.5,12"/><polygon points="15,14 11.5,8 18.5,8"/></g></svg>',
+    USD:'<svg class="fl" viewBox="0 0 30 20"><rect width="30" height="20" fill="#B22234"/><rect y="1.54" width="30" height="1.54" fill="#fff"/><rect y="4.62" width="30" height="1.54" fill="#fff"/><rect y="7.70" width="30" height="1.54" fill="#fff"/><rect y="10.78" width="30" height="1.54" fill="#fff"/><rect y="13.86" width="30" height="1.54" fill="#fff"/><rect y="16.94" width="30" height="1.54" fill="#fff"/><rect width="12" height="10.77" fill="#3C3B6E"/></svg>'
+  };
+  // Moneda -> país (cuando no coincide con las 2 primeras letras del código)
+  var CC = {EUR:"es",ANG:"cw",XAF:"cm",XOF:"sn",XCD:"ag",XPF:"pf",CNH:"cn",GGP:"gg",IMP:"im",JEP:"je",SLE:"sl",VES:"ve",STN:"st",MRU:"mr",ZWL:"zw",ZWG:"zw",TVD:"tv",KID:"ki",FOK:"fo"};
+  var FIXN = {CLP:"Peso chileno", EUR:"Euro · España", PLN:"Zloty · Polonia", ILS:"Shekel · Israel", USD:"Dólar"};
+  var FIXS = {CLP:"$", EUR:"€", PLN:"zł", ILS:"₪", USD:"US$"};
+  var CNAME = {CLP:"Chile", EUR:"España", PLN:"Polonia", ILS:"Israel", USD:"EE.UU."};
+  var dnCur=null, dnReg=null;
+  try{ dnCur=new Intl.DisplayNames(["es"],{type:"currency"}); dnReg=new Intl.DisplayNames(["es"],{type:"region"}); }catch(e){}
+  var META={};
+  function meta(c){
+    if(META[c]) return META[c];
+    var cc=(CC[c]||c.slice(0,2)).toLowerCase(), name=FIXN[c], sym=FIXS[c], d=2, country=CNAME[c];
+    if(!name){ try{ name=dnCur.of(c); }catch(e){} if(!name||name===c) name=c; name=name.charAt(0).toUpperCase()+name.slice(1); }
+    if(!country){ try{ country=dnReg.of(cc.toUpperCase()); }catch(e){} if(!country||country.toLowerCase()===cc) country=name; }
+    try{ d=new Intl.NumberFormat("es",{style:"currency",currency:c}).resolvedOptions().maximumFractionDigits; }catch(e){}
+    if(c==="CLP") d=0;
+    if(!sym){ try{ var p=new Intl.NumberFormat("es",{style:"currency",currency:c,currencyDisplay:"narrowSymbol"}).formatToParts(1).filter(function(x){return x.type==="currency";})[0]; sym=p?p.value:c; }catch(e){ sym=c; } }
+    if(sym==="$" && c!=="CLP") sym=c.slice(0,2)+"$";
+    var f = SVGF[c] || '<img class="fl" alt="" src="https://flagcdn.com/w40/'+cc+'.png" onerror="this.outerHTML=\'<span class=&quot;fl fc&quot;>'+c+'</span>\'">';
+    return META[c]={c:c,n:name,s:sym,d:d,f:f,country:country};
+  }
+  var SKIP = /^(XAG|XAU|XPD|XPT|XDR|XTS|XXX|XBT|BTC|ETH|BOV|CLF|COU|MXV|USN|UYI|UYW|CHE|CHW|VED|SVC|ZMK|EEK|LTL|LVL)$/;
+
+  // Pesos chilenos por 1 unidad (respaldo si nunca hubo internet).
   var DEFAULT = {CLP:1, EUR:1090, PLN:256, ILS:308, USD:966};
   var DEFAULT_TS = Date.UTC(2026,10,21,12,0,0);
   var SOURCES = [
     {url:"https://open.er-api.com/v6/latest/CLP", parse:function(j){ return j && j.result==="success" ? j.rates : null; }},
     {url:"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/clp.json", parse:function(j){
-      if(!j || !j.clp) return null; var r={}; for(var k in j.clp) r[k.toUpperCase()] = j.clp[k]; return r; }}
+      if(!j || !j.clp) return null; var r={}; for(var k in j.clp) if(/^[a-z]{3}$/.test(k)) r[k.toUpperCase()] = j.clp[k]; return r; }}
   ];
 
   // ---------- almacenamiento ----------
@@ -236,8 +302,13 @@
   var store = load("dm_rates", null) || {r:Object.assign({},DEFAULT), ts:DEFAULT_TS, src:"original"};
   var manual = load("dm_manual", false);
   var fee = load("dm_fee", 0);
-  // Precios de supermercado en Chile (Lider/Jumbo) y referencias en España, Polonia e Israel.
-  // Recopilados en noviembre 2026 desde supermercados y comparadores de precios. Referencia: varían por tienda y ofertas.
+  var home = load("dm_home", "CLP");
+  var curs = load("dm_curs", null) || ["CLP","EUR","PLN","ILS","USD"];
+  function fixCurs(){ curs=curs.filter(function(c,i){ return c!==home && curs.indexOf(c)===i && store.r[c]>0; }); curs.unshift(home); save("dm_curs",curs); }
+  if(!(store.r[home]>0)) home="CLP";
+  fixCurs();
+
+  // Precios de supermercado en Chile (Lider/Jumbo) y referencias en España, Polonia e Israel (nov 2026).
   var SEED = [
     {n:"Coca-Cola lata 350 ml", p:1000, r:{EUR:[0.99,"lata 330 ml · Mercadona"], PLN:[3.99,"lata 330 ml + 0,50 zł depósito"], ILS:[6.00,"lata 330 ml · precio suelto"]}},
     {n:"Coca-Cola botella 591 ml", p:1350, r:{EUR:[1.60,"botella 500 ml · Mercadona"]}},
@@ -256,37 +327,41 @@
     {n:"Big Mac (McDonald's)", p:4790, r:{EUR:[5.40,"precio típico"], PLN:[22.90,"promedio 2026"], ILS:[23.00,"precio McDonald's Israel"]}}
   ];
   var REF = {}; SEED.forEach(function(it){ if(it.r) REF[it.n]=it.r; });
-  var CNAME = {EUR:"España", PLN:"Polonia", ILS:"Israel", USD:"EE.UU."};
   var SEED_V = 2;
   var items = load("dm_items", null);
-  if(!items){ items = SEED.map(function(it){ return {n:it.n,p:it.p}; }); save("dm_items", items); save("dm_seed_v", SEED_V); }
+  if(!items){ items = SEED.map(function(it){ return {n:it.n,p:it.p,pc:"CLP"}; }); save("dm_items", items); save("dm_seed_v", SEED_V); }
   else if((load("dm_seed_v",1)||1) < SEED_V){
     var names = items.map(function(i){ return i.n; });
-    SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p}); });
+    SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p,pc:"CLP"}); });
     save("dm_items", items); save("dm_seed_v", SEED_V);
   }
-  var base = load("dm_base", "EUR");
+  items.forEach(function(it){ if(!it.pc) it.pc="CLP"; });
+  var base = load("dm_base", "EUR"); if(curs.indexOf(base)<0) base=curs[1]||home;
   var cmpCur = load("dm_cmp", "EUR");
   var selItem = -1;
   var expr = "";
   var online = null;
+  var editing = false;
 
   function $(id){ return document.getElementById(id); }
-  function rate(c){ return c==="CLP" ? 1 : store.r[c] * (1 + (fee||0)/100); }
-  function cur(c){ for(var i=0;i<CUR.length;i++) if(CUR[i].c===c) return CUR[i]; }
+  function raw(c){ return c==="CLP" ? 1 : store.r[c]; }
+  function rate(c){ return raw(c) * (c===home ? 1 : 1 + (fee||0)/100); }   // CLP por unidad (con recargo si es extranjera)
+  function cur(c){ return meta(c); }
+  function H(){ return meta(home); }
   function fmt(v, d){
     if(!isFinite(v)) return "—";
     return v.toLocaleString("es-CL",{minimumFractionDigits:d?Math.min(d, Math.abs(v)<100?2:0):0, maximumFractionDigits:d});
   }
-  function fmtCLP(v){ return "$" + Math.round(v).toLocaleString("es-CL"); }
-  function num(s){ if(!s) return 0; s=String(s).trim().replace(/\s/g,""); if(s.indexOf(",")>-1) s=s.replace(/\./g,"").replace(",","."); var n=parseFloat(s); return isNaN(n)?0:n; }
-  function intNum(s){ var n=parseInt(String(s).replace(/[^\d]/g,""),10); return isNaN(n)?0:n; }
+  function fmtH(clp){ var h=H(); return h.s+(h.s.length>1?" ":"")+fmt(clp/raw(home), h.d); }   // muestra un valor (en CLP internos) en la moneda de origen
+  function num(s){ if(!s) return 0; s=String(s).trim().replace(/\s/g,""); if(s.indexOf(",")>-1) s=s.replace(/\./g,"").replace(",","."); else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,""); var n=parseFloat(s); return isNaN(n)?0:n; }
   function when(ts){
     var d=new Date(ts), now=new Date();
     var hh=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
     if(d.toDateString()===now.toDateString()) return "hoy "+hh;
     return d.getDate()+"/"+(d.getMonth()+1)+" "+hh;
   }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function cmpList(){ return curs.filter(function(c){ return c!==home; }); }
 
   // ---------- calculadora ----------
   function evalExpr(s){
@@ -324,18 +399,30 @@
     var amount = evalExpr(expr);
     var inCLP = amount * rate(base);
     var h="";
-    CUR.forEach(function(c){
-      var sel = c.c===base;
-      var v = sel ? amount : inCLP / rate(c.c);
+    curs.forEach(function(code){
+      var c=cur(code), sel = code===base, isHome = code===home;
+      var v = sel ? amount : inCLP / rate(code);
       var shown = sel && expr ? expr : fmt(v, c.d);
-      var sub = sel ? (/[+\-×÷]/.test(expr) ? "= "+fmt(amount,c.d) : "") : (c.c!=="CLP" ? "1 "+c.s+" = "+fmtCLP(rate(c.c)) : "");
+      var sub = sel ? (/[+\-×÷]/.test(expr) ? "= "+fmt(amount,c.d) : "") : (!isHome ? "1 "+c.s+" = "+fmtH(rate(code)) : "");
       var txt = c.s+' '+(shown||"0");
-      h += '<div class="row'+(sel?' sel':'')+'" data-c="'+c.c+'"><div class="flag">'+c.f+'</div>'+
-           '<div class="cc"><b>'+c.c+'</b><span>'+c.n+'</span></div>'+
-           '<div class="val"><div class="n'+(txt.length>13?' long':'')+'">'+txt+'</div><div class="expr">'+sub+'</div></div></div>';
+      var right = editing
+        ? (isHome ? '<div class="homeTag">Tu moneda</div>' : '<button class="rm" data-rm="'+code+'" aria-label="Quitar">✕</button>')
+        : '<div class="val"><div class="n'+(txt.length>13?' long':'')+'">'+txt+'</div><div class="expr">'+sub+'</div></div>';
+      h += '<div class="row'+(sel&&!editing?' sel':'')+'" data-c="'+code+'"><div class="flag">'+c.f+'</div>'+
+           '<div class="cc"><b>'+code+(isHome&&!editing?' <i class="hm">origen</i>':'')+'</b><span>'+esc(c.n)+'</span></div>'+right+'</div>';
     });
+    h += '<div class="listbar"><button id="addCurBtn">+ Agregar divisa</button><button id="editBtn">'+(editing?'Listo':'Quitar divisas')+'</button></div>';
     $("list").innerHTML=h;
-    Array.prototype.forEach.call(document.querySelectorAll(".row"),function(r){
+    $("addCurBtn").onclick=function(){ openPicker("add"); };
+    $("editBtn").onclick=function(){ editing=!editing; renderList(); };
+    Array.prototype.forEach.call(document.querySelectorAll("#list .rm"),function(b){
+      b.onclick=function(e){ e.stopPropagation(); var c=b.getAttribute("data-rm");
+        curs=curs.filter(function(x){return x!==c;}); save("dm_curs",curs);
+        if(base===c){ base=curs[1]||home; save("dm_base",base); expr=""; }
+        renderList(); renderCmpCur(); renderItems(); renderRates(); };
+    });
+    if(editing) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#list .row"),function(r){
       r.onclick=function(){
         var c=r.getAttribute("data-c"); if(c===base) return;
         var amount = evalExpr(expr), inCLP = amount*rate(base);
@@ -350,7 +437,7 @@
   function buildPad(){
     var keys=["7","8","9","÷","4","5","6","×","1","2","3","-","C","0",",","+","⌫","="];
     var h="";
-    keys.forEach(function(k,i){
+    keys.forEach(function(k){
       var cls="k"+(/[+\-×÷]/.test(k)?" op":"")+(k==="="?" eq":"")+(k==="C"?" c":"");
       var style = k==="=" ? ' style="grid-column:span 3"' : "";
       h+='<button class="'+cls+'" data-k="'+k+'"'+style+'>'+(k==="-"?"−":k)+'</button>';
@@ -359,35 +446,103 @@
     Array.prototype.forEach.call(document.querySelectorAll(".k"),function(b){ b.onclick=function(){ press(b.getAttribute("data-k")); }; });
   }
 
+  // ---------- selector de divisas ----------
+  var pickMode="add";
+  function allCodes(){ return Object.keys(store.r).filter(function(c){ return /^[A-Z]{3}$/.test(c) && !SKIP.test(c) && store.r[c]>0; }); }
+  function openPicker(mode){
+    pickMode=mode;
+    $("pkTitle").textContent = mode==="home" ? "¿De qué país eres?" : "Agregar divisa";
+    $("pkSearch").value="";
+    $("picker").className="picker show";
+    renderPicker();
+    setTimeout(function(){ try{ $("pkSearch").focus(); }catch(e){} }, 50);
+  }
+  function closePicker(){ $("picker").className="picker"; }
+  function norm(s){ return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+  function renderPicker(){
+    var q=norm($("pkSearch").value.trim());
+    var codes=allCodes();
+    var list=codes.map(meta).filter(function(m){
+      if(pickMode==="add" && curs.indexOf(m.c)>-1) return false;
+      return !q || norm(m.c+" "+m.n+" "+m.country).indexOf(q)>-1;
+    });
+    var top=["CLP","USD","EUR","ARS","PEN","BRL","MXN","COP","GBP","PLN","ILS"];
+    list.sort(function(a,b){
+      var ia=top.indexOf(a.c), ib=top.indexOf(b.c);
+      if(ia>-1||ib>-1) return (ia<0?99:ia)-(ib<0?99:ib);
+      return a.country.localeCompare(b.country,"es");
+    });
+    var h=list.map(function(m){
+      var on = pickMode==="home" && m.c===home;
+      return '<li data-c="'+m.c+'"'+(on?' class="on"':'')+'><span class="flag">'+m.f+'</span><span class="pn"><b>'+esc(pickMode==="home"?m.country:m.n)+'</b><small>'+esc(pickMode==="home"?m.n+" · "+m.c:m.country+" · "+m.c)+'</small></span>'+(on?'<span class="ok">✓</span>':'')+'</li>';
+    }).join("");
+    if(!list.length) h='<li class="empty">No encontré esa divisa.</li>';
+    if(codes.length<20) h='<li class="empty">Conéctate a internet una vez para ver todas las divisas del mundo.</li>'+h;
+    $("pkList").innerHTML=h;
+    Array.prototype.forEach.call(document.querySelectorAll("#pkList li[data-c]"),function(li){
+      li.onclick=function(){
+        var c=li.getAttribute("data-c");
+        if(pickMode==="home"){ setHome(c); }
+        else { curs.push(c); save("dm_curs",curs); }
+        closePicker(); renderList(); renderCmpCur(); renderItems(); renderRates(); verdict();
+      };
+    });
+  }
+  function setHome(c){
+    home=c; save("dm_home",home);
+    if(curs.indexOf(c)<0) curs.unshift(c);
+    fixCurs();
+    if(base===home && curs.length>1){ base=curs[1]; save("dm_base",base); }
+    expr=""; save("dm_expr","");
+    $("chile").value=""; selItem=-1; showSel();
+  }
+
   // ---------- comparar ----------
   function renderCmpCur(){
+    var list=cmpList();
+    if(list.indexOf(cmpCur)<0){ cmpCur=list[0]||home; save("dm_cmp",cmpCur); }
     var h="";
-    CUR.forEach(function(c){ if(c.c==="CLP") return; h+='<button class="cp'+(c.c===cmpCur?' on':'')+'" data-c="'+c.c+'">'+c.f+' '+c.s+'</button>'; });
+    list.forEach(function(code){ var c=cur(code); h+='<button class="cp'+(code===cmpCur?' on':'')+'" data-c="'+code+'">'+c.f+' '+esc(c.s)+'</button>'; });
+    if(!list.length) h='<div class="small">Agrega una divisa en el Conversor para comparar.</div>';
     $("cmpCur").innerHTML=h; $("cmpSym").textContent=cur(cmpCur).s;
+    $("homeSym").textContent=H().s;
+    $("cmpTitle").textContent="Comparar con "+H().country;
+    $("homeLbl").textContent="Precio en "+H().country;
+    $("listTitle").textContent="Mis precios de "+H().country;
+    $("newPrice").placeholder=H().s+" "+home;
+    $("chile").inputMode = H().d ? "decimal" : "numeric";
     Array.prototype.forEach.call(document.querySelectorAll(".cp"),function(b){ b.onclick=function(){ cmpCur=b.getAttribute("data-c"); save("dm_cmp",cmpCur); renderCmpCur(); renderItems(); showSel(); verdict(); }; });
   }
   function verdict(){
-    var here=num($("here").value)*rate(cmpCur), chile=intNum($("chile").value), box=$("verdict");
-    if(!here||!chile){ box.className="verdict"; return; }
-    var diff=(here-chile)/chile*100, a=Math.abs(diff).toFixed(0), t,d,cls;
-    if(diff<=-10){ t="Conviene"; cls="v-good"; d="Aquí sale "+fmtCLP(here)+": "+a+"% más barato (ahorras "+fmtCLP(chile-here)+")."; }
-    else if(diff<10){ t="Más o menos igual"; cls="v-mid"; d="Aquí sale "+fmtCLP(here)+", "+a+"% "+(diff<0?"más barato":"más caro")+". No vale la pena por precio."; }
-    else { t="Está caro"; cls="v-bad"; d="Aquí sale "+fmtCLP(here)+": "+a+"% más caro ("+fmtCLP(here-chile)+" de diferencia)."; }
+    var here=num($("here").value)*rate(cmpCur), mine=num($("chile").value)*rate(home), box=$("verdict");
+    var it = selItem>-1 ? items[selItem] : null;
+    $("saveRef").style.display = it && num($("here").value) ? "" : "none";
+    if(it) $("saveRef").textContent="Guardar "+cur(cmpCur).s+" "+fmt(num($("here").value),2)+" como precio típico en "+cur(cmpCur).country;
+    if(!here||!mine){ box.className="verdict"; return; }
+    var diff=(here-mine)/mine*100, a=Math.abs(diff).toFixed(0), t,d,cls;
+    if(diff<=-10){ t="Conviene"; cls="v-good"; d="Aquí sale "+fmtH(here)+": "+a+"% más barato (ahorras "+fmtH(mine-here)+")."; }
+    else if(diff<10){ t="Más o menos igual"; cls="v-mid"; d="Aquí sale "+fmtH(here)+", "+a+"% "+(diff<0?"más barato":"más caro")+". No vale la pena por precio."; }
+    else { t="Está caro"; cls="v-bad"; d="Aquí sale "+fmtH(here)+": "+a+"% más caro ("+fmtH(here-mine)+" de diferencia)."; }
     box.className="verdict show "+cls; $("vt").textContent=t; $("vd").textContent=d;
   }
-  function refOf(it){ var r=REF[it.n]; return r && r[cmpCur] ? r[cmpCur] : null; }
+  function refOf(it){
+    if(it.ref && it.ref[cmpCur]) return it.ref[cmpCur];
+    var r=REF[it.n]; return r && r[cmpCur] ? r[cmpCur] : null;
+  }
+  function itemCLP(it){ return it.p*raw(it.pc||"CLP"); }
   function refBadge(it){
     var r=refOf(it); if(!r) return "";
-    var clp=r[0]*rate(cmpCur), diff=(clp-it.p)/it.p*100, cls, txt;
+    var there=r[0]*rate(cmpCur), mine=itemCLP(it), diff=(there-mine)/mine*100, cls, txt;
     if(diff<=-10){ cls="rb-good"; txt="suele convenir"; }
     else if(diff<10){ cls="rb-mid"; txt="precio similar"; }
     else { cls="rb-bad"; txt="suele ser más caro"; }
-    return '<div class="ref"><span class="rb '+cls+'">'+txt+'</span> '+CNAME[cmpCur]+': '+cur(cmpCur).s+' '+fmt(r[0],2)+' · '+esc(r[1])+'</div>';
+    return '<div class="ref"><span class="rb '+cls+'">'+txt+'</span> '+esc(cur(cmpCur).country)+': '+esc(cur(cmpCur).s)+' '+fmt(r[0],2)+' · '+esc(r[1])+'</div>';
   }
   function showSel(){
-    var el=$("selName");
-    if(selItem>-1 && items[selItem]){ var r=refOf(items[selItem]); el.textContent="Comparando: "+items[selItem].n+(r?" · típico en "+CNAME[cmpCur]+": "+cur(cmpCur).s+" "+fmt(r[0],2):""); el.className="selname show"; }
-    else { el.className="selname"; el.textContent=""; }
+    var el=$("selName"), tools=$("selTools");
+    if(selItem>-1 && items[selItem]){ var r=refOf(items[selItem]); el.textContent="Comparando: "+items[selItem].n+(r?" · típico en "+cur(cmpCur).country+": "+cur(cmpCur).s+" "+fmt(r[0],2):""); el.className="selname show"; tools.className="seltools show"; }
+    else { el.className="selname"; el.textContent=""; tools.className="seltools"; }
+    verdict();
   }
   function keepSelVisible(){
     var li=document.querySelector("#items li.on"); if(!li) return;
@@ -397,27 +552,33 @@
     if(r.top<topLimit) box.scrollTop -= (topLimit-r.top);
     else if(r.bottom>b.bottom-8) box.scrollTop += (r.bottom-(b.bottom-8));
   }
-  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function homeVal(it){ return itemCLP(it)/raw(home); }
   function renderItems(){
-    var cc=cur(cmpCur);
-    var h=""; items.forEach(function(it,i){ var eq=it.p/rate(cmpCur); h+='<li'+(i===selItem?' class="on"':'')+'><span class="n" data-i="'+i+'">'+esc(it.n)+refBadge(it)+'</span><span class="p" data-i="'+i+'"><b>'+fmtCLP(it.p)+'</b><small>≈ '+cc.s+' '+fmt(eq,2)+'</small></span><button class="x" data-d="'+i+'" aria-label="Borrar">×</button></li>'; });
+    var cc=cur(cmpCur), hh=H();
+    var h=""; items.forEach(function(it,i){ var eq=itemCLP(it)/rate(cmpCur); h+='<li'+(i===selItem?' class="on"':'')+'><span class="n" data-i="'+i+'">'+esc(it.n)+refBadge(it)+'</span><span class="p" data-i="'+i+'"><b>'+fmtH(itemCLP(it))+'</b><small>≈ '+esc(cc.s)+' '+fmt(eq,2)+'</small></span><button class="x" data-d="'+i+'" aria-label="Borrar">×</button></li>'; });
     if(!items.length) h='<li style="color:var(--muted);font-size:13px">Todavía no hay productos.</li>';
     $("items").innerHTML=h;
     Array.prototype.forEach.call(document.querySelectorAll("#items .n, #items .p"),function(el){ el.onclick=function(){ var idx=+el.getAttribute("data-i"), it=items[idx]; selItem=idx;
         Array.prototype.forEach.call(document.querySelectorAll("#items li"),function(li,j){ li.classList.toggle("on", j===idx); });
-        $("chile").value=it.p.toLocaleString("es-CL"); $("here").value=""; verdict();
+        var v=homeVal(it); $("chile").value=fmt(v, hh.d); $("here").value="";
         showSel(); keepSelVisible();
         try{ $("here").focus({preventScroll:true}); }catch(e){} }; });
     Array.prototype.forEach.call(document.querySelectorAll("#items .x"),function(b){ b.onclick=function(){ var d=+b.getAttribute("data-d"); items.splice(d,1); if(selItem===d) selItem=-1; else if(selItem>d) selItem--; save("dm_items",items); renderItems(); showSel(); }; });
   }
+  function searchUrl(it){
+    var q="precio "+it.n+" supermercado "+cur(cmpCur).country+" "+cur(cmpCur).c;
+    return "https://www.google.com/search?q="+encodeURIComponent(q);
+  }
 
   // ---------- tasas ----------
   function renderRates(){
-    var h="";
-    CUR.forEach(function(c){ if(c.c==="CLP") return; h+='<label for="r_'+c.c+'">'+c.f+' 1 '+c.s+' =</label><input id="r_'+c.c+'" inputmode="decimal" value="'+fmt(store.r[c.c],2)+'">'; });
+    var h="", hh=H();
+    $("homeBtn").innerHTML='<span class="flag">'+hh.f+'</span><span class="pn"><b>'+esc(hh.country)+'</b><small>'+esc(hh.n)+' · '+home+'</small></span><span class="chg">Cambiar</span>';
+    $("rateLbl").textContent=hh.n+" por 1 unidad";
+    cmpList().forEach(function(code){ var c=cur(code); h+='<label for="r_'+code+'">'+c.f+' 1 '+esc(c.s)+' =</label><input id="r_'+code+'" inputmode="decimal" value="'+fmt(raw(code)/raw(home), Math.max(2,hh.d))+'">'; });
     $("rateForm").innerHTML=h;
-    CUR.forEach(function(c){ if(c.c==="CLP") return;
-      $("r_"+c.c).onchange=function(e){ var v=num(e.target.value); if(v>0){ store.r[c.c]=v; store.ts=Date.now(); store.src="manual"; manual=true; save("dm_manual",true); save("dm_rates",store); updateStatus(); renderList(); verdict(); } };
+    cmpList().forEach(function(code){
+      $("r_"+code).onchange=function(e){ var v=num(e.target.value); if(v>0){ store.r[code]=v*raw(home); store.ts=Date.now(); store.src="manual"; manual=true; save("dm_manual",true); save("dm_rates",store); updateStatus(); renderList(); renderItems(); verdict(); } };
     });
     $("rateInfo").textContent = manual
       ? "Estás usando tasas escritas a mano. No se actualizan solas hasta que toques \"Volver a las tasas originales\" o \"Actualizar\"."
@@ -454,11 +615,13 @@
       var s=SOURCES[i++];
       fetchJSON(s.url).then(function(j){
         var r=s.parse(j); if(!r) throw new Error("bad");
-        var nr={CLP:1}, ok=true;
-        CUR.forEach(function(c){ if(c.c==="CLP") return; var v=r[c.c]; if(!v||!(v>0)){ ok=false; return; } nr[c.c]=1/v; });
+        var nr={CLP:1};
+        for(var k in r){ var v=+r[k]; if(/^[A-Z]{3}$/.test(k) && v>0) nr[k]=1/v; }
+        var ok=curs.every(function(c){ return nr[c]>0; });
         if(!ok) throw new Error("missing");
         store={r:nr, ts:Date.now(), src:"api"}; manual=false; save("dm_manual",false); save("dm_rates",store);
         online=true; updateStatus(); renderList(); renderRates(); renderItems(); verdict();
+        if($("picker").className.indexOf("show")>-1) renderPicker();
       }).catch(function(){ next(); });
     })();
   }
@@ -469,16 +632,29 @@
       Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(x){x.classList.remove("on");});
       Array.prototype.forEach.call(document.querySelectorAll(".view"),function(x){x.classList.remove("on");});
       b.classList.add("on"); $("v-"+b.getAttribute("data-v")).classList.add("on");
+      if(editing){ editing=false; renderList(); }
     };
   });
   $("refreshBtn").onclick=function(){ refresh(true); };
   $("here").oninput=function(){ verdict(); keepSelVisible(); };
-  $("chile").oninput=function(e){ var n=intNum(e.target.value); e.target.value=n?n.toLocaleString("es-CL"):""; if(selItem>-1){ selItem=-1; renderItems(); showSel(); } verdict(); };
-  $("newPrice").oninput=function(e){ var n=intNum(e.target.value); e.target.value=n?n.toLocaleString("es-CL"):""; };
-  $("addBtn").onclick=function(){ var n=$("newName").value.trim(), p=intNum($("newPrice").value); if(!n||!p) return; items.push({n:n,p:p}); save("dm_items",items); $("newName").value=""; $("newPrice").value=""; renderItems(); };
-  $("seedBtn").onclick=function(){ var names=items.map(function(i){return i.n;}); SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p}); }); save("dm_items",items); renderItems(); };
+  $("chile").oninput=function(){ if(selItem>-1){ selItem=-1; renderItems(); showSel(); } verdict(); };
+  $("addBtn").onclick=function(){ var n=$("newName").value.trim(), p=num($("newPrice").value); if(!n||!p) return; items.push({n:n,p:p,pc:home}); save("dm_items",items); $("newName").value=""; $("newPrice").value=""; renderItems(); };
+  $("seedBtn").onclick=function(){ var names=items.map(function(i){return i.n;}); SEED.forEach(function(it){ if(names.indexOf(it.n)<0) items.push({n:it.n,p:it.p,pc:"CLP"}); }); save("dm_items",items); renderItems(); };
+  $("searchBtn").onclick=function(){ if(selItem<0) return; window.open(searchUrl(items[selItem]),"_blank"); };
+  $("saveRef").onclick=function(){
+    if(selItem<0) return; var v=num($("here").value); if(!v) return;
+    var it=items[selItem]; it.ref=it.ref||{}; it.ref[cmpCur]=[v,"anotado por ti · "+new Date().toLocaleDateString("es-CL")];
+    save("dm_items",items); renderItems(); showSel();
+    var b=$("saveRef"); b.textContent="✓ Guardado"; setTimeout(verdict,1200);
+  };
   $("fee").oninput=function(e){ fee=num(e.target.value); save("dm_fee",fee); renderList(); renderItems(); verdict(); };
-  $("resetBtn").onclick=function(){ manual=false; save("dm_manual",false); fee=0; save("dm_fee",0); store={r:Object.assign({},DEFAULT),ts:DEFAULT_TS,src:"original"}; save("dm_rates",store); renderRates(); renderList(); verdict(); refresh(true); };
+  $("resetBtn").onclick=function(){ manual=false; save("dm_manual",false); fee=0; save("dm_fee",0); store={r:Object.assign({},DEFAULT),ts:DEFAULT_TS,src:"original"}; save("dm_rates",store);
+    if(!(store.r[home]>0)) setHome("CLP"); fixCurs(); renderRates(); renderList(); renderCmpCur(); renderItems(); verdict(); refresh(true); };
+  $("homeBtn").onclick=function(){ openPicker("home"); };
+  $("cmpTitle").onclick=function(){ openPicker("home"); };
+  $("pkClose").onclick=closePicker;
+  $("picker").onclick=function(e){ if(e.target===$("picker")) closePicker(); };
+  $("pkSearch").oninput=renderPicker;
   window.addEventListener("online",function(){ refresh(false); });
   window.addEventListener("offline",function(){ online=false; updateStatus(); });
   document.addEventListener("visibilitychange",function(){
@@ -512,7 +688,7 @@
     var url = isHttp ? location.href.split("#")[0] : "";
     var msg = $("shareMsg");
     if(!url){ msg.textContent="Comparte el archivo por WhatsApp, o el link de la app cuando esté publicada."; return; }
-    var data={title:"Divisas Viaje", text:"Conversor para el viaje (euro, zloty, shekel). Instálalo y funciona sin internet:", url:url};
+    var data={title:"Divisas Viaje", text:"Conversor de monedas para el viaje. Instálalo y funciona sin internet:", url:url};
     if(navigator.share){ navigator.share(data).catch(function(){}); return; }
     try{ navigator.clipboard.writeText(url).then(function(){ msg.textContent="Link copiado: "+url; }, function(){ msg.textContent=url; }); }
     catch(e){ msg.textContent=url; }
